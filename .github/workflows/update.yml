@@ -2,6 +2,8 @@ name: UpdateHosts
 
 on:
   push:
+    tags-ignore:
+      - "v*.*.*"
   schedule:
     - cron: '0 */2 * * *'
 
@@ -10,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12]
+        node-version: [14]
 
     steps:
       - uses: actions/checkout@v2
@@ -25,6 +27,9 @@ jobs:
 
       - name: Update hosts
         run: npm run make
+
+      - name: Update next hosts
+        run: npm run make:next
 
       - name: Commit
         id: commit
@@ -43,6 +48,19 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.COMMIT_TOKEN }}
+
+      - name: Move files
+        run: |
+          mkdir ./public
+          mv ./README.md ./public/
+
+      - name: GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.COMMIT_TOKEN }}
+          publish_dir: ./public
+          enable_jekyll: true
+          keep_files: true
 
   git-mirror:
     needs: build
